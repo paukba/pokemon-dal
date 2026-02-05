@@ -1,0 +1,4 @@
+# Copy this to src/main/resources/db.properties and fill values (DO NOT commit)
+db.url=jdbc:mysql://localhost:3306/pokemon_collection?useSSL=false&serverTimezone=UTC
+db.user=root
+db.password=CHANGE_ME
