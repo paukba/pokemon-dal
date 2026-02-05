@@ -1,0 +1,23 @@
+# Maven / Java
+/target/
+*.class
+*.log
+
+# IDEs
+/.idea/
+/.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local DB properties (do NOT commit credentials)
+src/main/resources/db.properties
+
+# local Maven repository (rare)
+.m2/
+
+# archives, packages
+*.zip
+*.tar.gz
