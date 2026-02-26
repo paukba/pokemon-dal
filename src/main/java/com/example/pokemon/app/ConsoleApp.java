@@ -3,6 +3,7 @@ package com.example.pokemon.app;
 import com.example.pokemon.dao.*;
 import com.example.pokemon.model.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -34,6 +35,8 @@ public class ConsoleApp {
                     case "3" -> showCardById(sc);
                     case "4" -> showOwnerCollection(sc);
                     case "5" -> listTrades();
+                    case "6" -> updateOwner(sc);
+                    case "7" -> updateCardPrice(sc);
                     case "0" -> {
                         running = false;
                         System.out.println("Goodbye!");
@@ -55,6 +58,8 @@ public class ConsoleApp {
         System.out.println(" 3) Show card by ID");
         System.out.println(" 4) Show owner's collection (by owner id)");
         System.out.println(" 5) List all trades");
+        System.out.println(" 6) Update owner");
+        System.out.println(" 7) Update card price");
         System.out.println(" 0) Exit");
     }
 
@@ -62,9 +67,7 @@ public class ConsoleApp {
         try {
             List<Owner> owners = ownerDao.findAll();
             System.out.println("Owners:");
-            for (Owner o : owners) {
-                System.out.println("  " + o);
-            }
+            for (Owner o : owners) System.out.println("  " + o);
         } catch (Exception e) {
             System.err.println("Error listing owners: " + e.getMessage());
         }
@@ -87,8 +90,7 @@ public class ConsoleApp {
     private void showCardById(Scanner sc) {
         try {
             System.out.print("Enter card id: ");
-            String line = sc.nextLine().trim();
-            int id = Integer.parseInt(line);
+            int id = Integer.parseInt(sc.nextLine().trim());
             Optional<Card> maybe = cardDao.findById(id);
             if (maybe.isPresent()) System.out.println("Card: " + maybe.get());
             else System.out.println("No card with id " + id);
@@ -102,17 +104,14 @@ public class ConsoleApp {
     private void showOwnerCollection(Scanner sc) {
         try {
             System.out.print("Enter owner id: ");
-            String line = sc.nextLine().trim();
-            int ownerId = Integer.parseInt(line);
-            List<com.example.pokemon.model.CollectionEntry> entries = collectionDao.findByOwnerId(ownerId);
+            int ownerId = Integer.parseInt(sc.nextLine().trim());
+            List<CollectionEntry> entries = collectionDao.findByOwnerId(ownerId);
             if (entries.isEmpty()) {
                 System.out.println("No collection entries for owner " + ownerId);
                 return;
             }
             System.out.println("Collection entries for owner " + ownerId + ":");
-            for (com.example.pokemon.model.CollectionEntry e : entries) {
-                System.out.println("  " + e);
-            }
+            for (CollectionEntry e : entries) System.out.println("  " + e);
         } catch (NumberFormatException nfe) {
             System.out.println("Invalid id.");
         } catch (Exception e) {
@@ -127,6 +126,45 @@ public class ConsoleApp {
             for (Trade t : trades) System.out.println("  " + t);
         } catch (Exception e) {
             System.err.println("Error listing trades: " + e.getMessage());
+        }
+    }
+
+    private void updateOwner(Scanner sc) {
+        try {
+            System.out.print("Owner id to update: ");
+            int id = Integer.parseInt(sc.nextLine().trim());
+            Optional<Owner> o = ownerDao.findById(id);
+            if (o.isEmpty()) { System.out.println("Not found."); return; }
+            Owner owner = o.get();
+            System.out.print("New name (enter to keep '" + owner.getName() + "'): ");
+            String name = sc.nextLine().trim();
+            if (!name.isEmpty()) owner.setName(name);
+            System.out.print("New email (enter to keep '" + owner.getEmail() + "'): ");
+            String email = sc.nextLine().trim();
+            if (!email.isEmpty()) owner.setEmail(email);
+            boolean ok = ownerDao.update(owner);
+            System.out.println(ok ? "Owner updated." : "Update failed.");
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void updateCardPrice(Scanner sc) {
+        try {
+            System.out.print("Card id to update: ");
+            int id = Integer.parseInt(sc.nextLine().trim());
+            Optional<Card> cOpt = cardDao.findById(id);
+            if (cOpt.isEmpty()) { System.out.println("Not found."); return; }
+            Card card = cOpt.get();
+            System.out.println("Current price: " + card.getMarketValueUsd());
+            System.out.print("New price: ");
+            String s = sc.nextLine().trim();
+            if (s.isEmpty()) { System.out.println("No change."); return; }
+            card.setMarketValueUsd(new BigDecimal(s));
+            boolean ok = cardDao.update(card);
+            System.out.println(ok ? "Card updated." : "Update failed.");
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
         }
     }
 }

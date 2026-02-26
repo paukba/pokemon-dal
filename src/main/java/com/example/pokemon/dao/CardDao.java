@@ -7,8 +7,8 @@ import java.util.Optional;
 
 public interface CardDao {
     Card create(Card card) throws Exception;
-    Optional<Card> findById(int cardId) throws Exception;
+    Optional<Card> findById(int id) throws Exception;
     List<Card> findAll() throws Exception;
     boolean update(Card card) throws Exception;
-    boolean delete(int cardId) throws Exception;
+    boolean delete(int id) throws Exception;
 }

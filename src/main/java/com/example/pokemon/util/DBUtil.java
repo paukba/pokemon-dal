@@ -5,27 +5,27 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.Properties;
 
-public class DBUtil {
-    private static final String PROPS_FILE = "/db.properties";
-    private static String url;
-    private static String user;
-    private static String password;
+public final class DBUtil {
+    private static final String URL;
+    private static final String USER;
+    private static final String PASS;
 
     static {
-        try (InputStream in = DBUtil.class.getResourceAsStream(PROPS_FILE)) {
+        try (InputStream in = DBUtil.class.getResourceAsStream("/db.properties")) {
+            if (in == null) throw new RuntimeException("db.properties not found in classpath (src/main/resources/db.properties)");
             Properties p = new Properties();
             p.load(in);
-            url = p.getProperty("db.url");
-            user = p.getProperty("db.user");
-            password = p.getProperty("db.password");
-            // Load driver optional for modern drivers but safe:
-            Class.forName("com.mysql.cj.jdbc.Driver");
+            URL = p.getProperty("db.url");
+            USER = p.getProperty("db.user");
+            PASS = p.getProperty("db.password");
         } catch (Exception e) {
-            throw new RuntimeException("Cannot load DB config from " + PROPS_FILE, e);
+            throw new RuntimeException("Cannot load DB config", e);
         }
     }
 
+    private DBUtil() {}
+
     public static Connection getConnection() throws Exception {
-        return DriverManager.getConnection(url, user, password);
+        return DriverManager.getConnection(URL, USER, PASS);
     }
 }
