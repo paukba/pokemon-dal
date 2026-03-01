@@ -8,15 +8,28 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Owner DAO implementation.
+ *
+ * Non-transactional methods open their own Connection.
+ * Transactional overloads accept a Connection and MUST NOT close it.
+ */
 public class OwnerDaoImpl implements OwnerDao {
+
+    // ---------------------------------------------------------
+    // Standard methods (open their own connection)
+    // ---------------------------------------------------------
+
     @Override
     public Owner create(Owner owner) throws Exception {
         String sql = "INSERT INTO owners (name, email) VALUES (?, ?)";
-        try (Connection c = DBUtil.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
             ps.setString(1, owner.getName());
             ps.setString(2, owner.getEmail());
             ps.executeUpdate();
+
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) owner.setOwnerId(rs.getInt(1));
             }
@@ -26,29 +39,25 @@ public class OwnerDaoImpl implements OwnerDao {
 
     @Override
     public Optional<Owner> findById(int id) throws Exception {
-        String sql = "SELECT owner_id, name, email FROM owners WHERE owner_id = ?";
-        try (Connection c = DBUtil.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Owner o = new Owner(rs.getInt("owner_id"), rs.getString("name"), rs.getString("email"));
-                    return Optional.of(o);
-                }
-            }
+        try (Connection conn = DBUtil.getConnection()) {
+            return findById(id, conn);
         }
-        return Optional.empty();
     }
 
     @Override
     public List<Owner> findAll() throws Exception {
         List<Owner> list = new ArrayList<>();
         String sql = "SELECT owner_id, name, email FROM owners";
-        try (Connection c = DBUtil.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
+
             while (rs.next()) {
-                list.add(new Owner(rs.getInt("owner_id"), rs.getString("name"), rs.getString("email")));
+                list.add(new Owner(
+                        rs.getInt("owner_id"),
+                        rs.getString("name"),
+                        rs.getString("email")
+                ));
             }
         }
         return list;
@@ -56,22 +65,53 @@ public class OwnerDaoImpl implements OwnerDao {
 
     @Override
     public boolean update(Owner owner) throws Exception {
-        String sql = "UPDATE owners SET name = ?, email = ? WHERE owner_id = ?";
-        try (Connection c = DBUtil.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setString(1, owner.getName());
-            ps.setString(2, owner.getEmail());
-            ps.setInt(3, owner.getOwnerId());
-            return ps.executeUpdate() == 1;
+        try (Connection conn = DBUtil.getConnection()) {
+            return update(owner, conn);
         }
     }
 
     @Override
     public boolean delete(int id) throws Exception {
         String sql = "DELETE FROM owners WHERE owner_id = ?";
-        try (Connection c = DBUtil.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setInt(1, id);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    // ---------------------------------------------------------
+    // Connection-based overloads (for transactions)
+    // DO NOT close the supplied connection
+    // ---------------------------------------------------------
+
+    @Override
+    public Optional<Owner> findById(int id, Connection conn) throws Exception {
+        String sql = "SELECT owner_id, name, email FROM owners WHERE owner_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Owner o = new Owner(
+                            rs.getInt("owner_id"),
+                            rs.getString("name"),
+                            rs.getString("email")
+                    );
+                    return Optional.of(o);
+                }
+                return Optional.empty();
+            }
+        }
+    }
+
+    @Override
+    public boolean update(Owner owner, Connection conn) throws Exception {
+        String sql = "UPDATE owners SET name = ?, email = ? WHERE owner_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, owner.getName());
+            ps.setString(2, owner.getEmail());
+            ps.setInt(3, owner.getOwnerId());
             return ps.executeUpdate() == 1;
         }
     }

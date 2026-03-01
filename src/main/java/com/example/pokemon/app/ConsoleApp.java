@@ -2,17 +2,31 @@ package com.example.pokemon.app;
 
 import com.example.pokemon.dao.*;
 import com.example.pokemon.model.*;
+import com.example.pokemon.service.ServiceResult;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 
+/**
+ * Console UI for the Pokémon collection manager.
+ *
+ * I added two menu options:
+ *  8) Propose and accept a trade via REST microservice (calls /trades/propose and /trades/{id}/accept).
+ *  9) Compute owner's total collection value via REST microservice (calls /owners/{id}/value).
+ *
+ * The REST server is expected to run on http://localhost:4567 (see PokemonServiceApp).
+ * If you prefer a different base URL, change the RestClient instantiation below.
+ */
 public class ConsoleApp {
     private final OwnerDao ownerDao = new OwnerDaoImpl();
     private final CardDao cardDao = new CardDaoImpl();
     private final CollectionDao collectionDao = new CollectionDaoImpl();
     private final TradeDao tradeDao = new TradeDaoImpl();
+
+    // RestClient points to local service started by PokemonServiceApp (SparkJava)
+    private final RestClient restClient = new RestClient("http://localhost:4567");
 
     public static void main(String[] args) {
         ConsoleApp app = new ConsoleApp();
@@ -37,6 +51,8 @@ public class ConsoleApp {
                     case "5" -> listTrades();
                     case "6" -> updateOwner(sc);
                     case "7" -> updateCardPrice(sc);
+                    case "8" -> proposeAndAcceptTradeViaRest(sc);
+                    case "9" -> showOwnerValueViaRest(sc);
                     case "0" -> {
                         running = false;
                         System.out.println("Goodbye!");
@@ -60,6 +76,8 @@ public class ConsoleApp {
         System.out.println(" 5) List all trades");
         System.out.println(" 6) Update owner");
         System.out.println(" 7) Update card price");
+        System.out.println(" 8) Propose and accept a trade (via REST demo)");
+        System.out.println(" 9) Show owner total collection value (via REST)");
         System.out.println(" 0) Exit");
     }
 
@@ -160,11 +178,83 @@ public class ConsoleApp {
             System.out.print("New price: ");
             String s = sc.nextLine().trim();
             if (s.isEmpty()) { System.out.println("No change."); return; }
+            // keep using BigDecimal as original project does
             card.setMarketValueUsd(new BigDecimal(s));
             boolean ok = cardDao.update(card);
             System.out.println(ok ? "Card updated." : "Update failed.");
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * New menu option:
+     * Propose a trade via REST, then optionally accept it immediately (demonstrates service + transactions).
+     *
+     * Example flow:
+     *  - Prompt for fromOwnerId, toOwnerId, cardId, quantity, notes
+     *  - POST /trades/propose
+     *  - If created, POST /trades/{id}/accept
+     */
+    private void proposeAndAcceptTradeViaRest(Scanner sc) {
+        try {
+            System.out.println("Propose a trade (you will be asked for fields):");
+            System.out.print("From owner id: ");
+            int from = Integer.parseInt(sc.nextLine().trim());
+            System.out.print("To owner id: ");
+            int to = Integer.parseInt(sc.nextLine().trim());
+            System.out.print("Card id: ");
+            int cardId = Integer.parseInt(sc.nextLine().trim());
+            System.out.print("Quantity: ");
+            int qty = Integer.parseInt(sc.nextLine().trim());
+            System.out.print("Notes (optional): ");
+            String notes = sc.nextLine().trim();
+
+            Trade t = new Trade();
+            t.setFromOwner(from);
+            t.setToOwner(to);
+            t.setCardId(cardId);
+            t.setQuantity(qty);
+            t.setNotes(notes);
+
+            System.out.println("Calling REST service to propose trade...");
+            Trade created = restClient.proposeTrade(t);
+            System.out.println("Proposed trade id: " + created.getTradeId() + ", status: " + created.getStatus());
+
+            System.out.print("Accept trade now? (y/N): ");
+            String accept = sc.nextLine().trim();
+            if (accept.equalsIgnoreCase("y")) {
+                System.out.println("Calling REST service to accept trade...");
+                ServiceResult result = restClient.acceptTrade(created.getTradeId());
+                System.out.println("Result: " + (result.isSuccess() ? "OK" : "FAILED") + " - " + result.getMessage());
+            } else {
+                System.out.println("Trade left in PROPOSED state.");
+            }
+        } catch (NumberFormatException nfe) {
+            System.out.println("Invalid number entered.");
+        } catch (Exception e) {
+            System.err.println("Error while proposing/accepting trade: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * New menu option:
+     * Compute owner collection value by calling REST endpoint:
+     *  GET /owners/{id}/value
+     */
+    private void showOwnerValueViaRest(Scanner sc) {
+        try {
+            System.out.print("Enter owner id: ");
+            int ownerId = Integer.parseInt(sc.nextLine().trim());
+            System.out.println("Querying REST service for owner value...");
+            double value = restClient.getOwnerValue(ownerId);
+            System.out.printf("Owner %d collection total value: $%.2f%n", ownerId, value);
+        } catch (NumberFormatException nfe) {
+            System.out.println("Invalid id.");
+        } catch (Exception e) {
+            System.err.println("Error fetching owner value: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
