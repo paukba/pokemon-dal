@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pokémon Card Collection — Web Client</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Bootstrap 4 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { padding-top: 2rem; padding-bottom: 3rem; }
+    .page-title { font-size: 2.5rem; font-weight: 700; margin-bottom: .75rem; }
+    .muted-small { font-size: .9rem; color: #6c757d; }
+    table th, table td { vertical-align: middle !important; }
+    .btn-compact { padding: .35rem .6rem; font-size: .85rem; }
+    .card-section { margin-top: 1.75rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-3">
+      <a class="navbar-brand" href="#">Pokémon Collection Client</a>
+      <div class="ml-auto text-muted small">Local REST demo</div>
+    </nav>
+
+    <header class="mb-3">
+      <div class="page-title">Pokémon Card Collection</div>
+
+      <div class="card p-3 mb-3">
+        <div class="form-row align-items-center">
+          <div class="col-sm-8 my-1">
+            <label class="sr-only" for="baseUrl">API Base URL</label>
+            <input id="baseUrl" type="text" class="form-control" value="http://localhost:4567" />
+            <small class="muted-small">Base URL for your REST service (no trailing slash). Example: http://localhost:4567</small>
+          </div>
+          <div class="col-auto my-1">
+            <button id="fetchAllBtn" class="btn btn-primary">Fetch All</button>
+            <button id="clearBtn" class="btn btn-outline-secondary">Clear Tables</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Owners -->
+    <section class="card-section">
+      <h4>Owners</h4>
+      <div class="table-responsive">
+        <table id="ownersTbl" class="table table-sm table-striped table-bordered">
+          <thead class="thead-light">
+            <tr><th>ID</th><th>Name</th><th>Email</th><th>Actions</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Cards -->
+    <section class="card-section">
+      <h4>Cards</h4>
+      <div class="table-responsive">
+        <table id="cardsTbl" class="table table-sm table-striped table-bordered">
+          <thead class="thead-light">
+            <tr>
+              <th>ID</th><th>Name</th><th>Set</th><th>Rarity</th><th>Edition</th><th>Market Value (USD)</th><th>Condition</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Collections -->
+    <section class="card-section">
+      <h4>Collections</h4>
+      <div class="table-responsive">
+        <table id="collectionsTbl" class="table table-sm table-striped table-bordered">
+          <thead class="thead-light">
+            <tr><th>ID</th><th>Owner ID</th><th>Card ID</th><th>Quantity</th><th>Acquired Date</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Trades -->
+    <section class="card-section mb-5">
+      <div class="d-flex justify-content-between align-items-center">
+        <h4>Trades</h4>
+        <div>
+          <button id="openProposeBtn" class="btn btn-success btn-sm">Propose Trade</button>
+        </div>
+      </div>
+
+      <div class="table-responsive mt-2">
+        <table id="tradesTbl" class="table table-sm table-striped table-bordered">
+          <thead class="thead-light">
+            <tr><th>ID</th><th>From</th><th>To</th><th>Card ID</th><th>Qty</th><th>Date</th><th>Status</th><th>Notes</th><th>Action</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="text-center text-muted small">Demo client — talks to your local Pokémon REST service</footer>
+  </div>
+
+  <!-- Propose Trade Modal -->
+  <div id="proposeModal" class="modal" tabindex="-1" role="dialog" style="display:none;">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Propose Trade</h5>
+          <button type="button" class="close" onclick="closePropose()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group"><label>From Owner ID</label><input id="p_from" class="form-control" /></div>
+          <div class="form-group"><label>To Owner ID</label><input id="p_to" class="form-control" /></div>
+          <div class="form-group"><label>Card ID</label><input id="p_card" class="form-control" /></div>
+          <div class="form-group"><label>Quantity</label><input id="p_qty" class="form-control" /></div>
+          <div class="form-group"><label>Notes</label><input id="p_notes" class="form-control" /></div>
+          <div id="p_msg" class="text-danger small"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" onclick="submitPropose()">Submit</button>
+          <button class="btn btn-secondary" onclick="closePropose()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // ---------------------
+    // Helpers
+    // ---------------------
+    function baseUrl() {
+      return (document.getElementById('baseUrl').value || '').replace(/\/$/, '');
+    }
+
+    function formatMoney(v) {
+      if (v === null || v === undefined) return '';
+      // accept number or string; ensure numeric formatting
+      const num = Number(v);
+      if (isNaN(num)) return String(v);
+      return '$' + num.toFixed(2);
+    }
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"'\/]/g, function (c) {
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;'}[c];
+      });
+    }
+
+    function handleError(e) {
+      console.error(e);
+      alert('Error: ' + (e.message || e));
+    }
+
+    // ---------------------
+    // Fetch & render functions
+    // ---------------------
+    async function fetchOwners() {
+      const res = await fetch(baseUrl() + '/owners');
+      if (!res.ok) throw new Error(await res.text());
+      const arr = await res.json();
+      const tbody = document.querySelector('#ownersTbl tbody');
+      tbody.innerHTML = '';
+      for (const o of arr) {
+        const id = o.ownerId ?? o.owner_id;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${id ?? ''}</td>
+          <td>${escapeHtml(o.name || '')}</td>
+          <td>${escapeHtml(o.email || '')}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-info btn-compact" onclick="fetchOwnerValue(${id})">Total Value</button>
+            <button class="btn btn-sm btn-outline-secondary btn-compact" onclick="showOwnerCollection(${id})">Show Collection</button>
+          </td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    async function fetchCards() {
+      const res = await fetch(baseUrl() + '/cards');
+      if (!res.ok) throw new Error(await res.text());
+      const arr = await res.json();
+      const tbody = document.querySelector('#cardsTbl tbody');
+      tbody.innerHTML = '';
+      for (const c of arr) {
+        const id = c.cardId ?? c.card_id;
+        const val = c.marketValueUsd ?? c.market_value_usd;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${id ?? ''}</td>
+          <td>${escapeHtml(c.name || '')}</td>
+          <td>${escapeHtml(c.cardSet || c.card_set || '')}</td>
+          <td>${escapeHtml(c.rarity || '')}</td>
+          <td>${escapeHtml(c.edition || '')}</td>
+          <td>${formatMoney(val)}</td>
+          <td>${escapeHtml(c.condition || '')}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    async function fetchCollections() {
+      const res = await fetch(baseUrl() + '/collections');
+      if (!res.ok) throw new Error(await res.text());
+      const arr = await res.json();
+      const tbody = document.querySelector('#collectionsTbl tbody');
+      tbody.innerHTML = '';
+      for (const e of arr) {
+        const id = e.collectionId ?? e.collection_id;
+        const acquired = e.acquiredDate ?? e.acquired_date;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${id ?? ''}</td>
+          <td>${e.ownerId ?? e.owner_id ?? ''}</td>
+          <td>${e.cardId ?? e.card_id ?? ''}</td>
+          <td>${e.quantity ?? ''}</td>
+          <td>${acquired ?? ''}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    async function fetchTrades() {
+      const res = await fetch(baseUrl() + '/trades');
+      if (!res.ok) throw new Error(await res.text());
+      const arr = await res.json();
+      const tbody = document.querySelector('#tradesTbl tbody');
+      tbody.innerHTML = '';
+      for (const t of arr) {
+        const id = t.tradeId ?? t.trade_id;
+        const date = t.tradeDate ?? t.trade_date ?? '';
+        const status = (t.status || '').toUpperCase();
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${id ?? ''}</td>
+          <td>${t.fromOwner ?? t.from_owner ?? ''}</td>
+          <td>${t.toOwner ?? t.to_owner ?? ''}</td>
+          <td>${t.cardId ?? t.card_id ?? ''}</td>
+          <td>${t.quantity ?? ''}</td>
+          <td>${date}</td>
+          <td>${escapeHtml(status)}</td>
+          <td>${escapeHtml(t.notes || '')}</td>
+          <td>${status === 'PROPOSED' ? '<button class="btn btn-sm btn-primary btn-compact" onclick="acceptTrade('+id+')">Accept</button>' : ''}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // ---------------------
+    // Actions
+    // ---------------------
+    async function fetchOwnerValue(ownerId) {
+      try {
+        const res = await fetch(baseUrl() + '/owners/' + ownerId + '/value');
+        if (!res.ok) throw new Error(await res.text());
+        const v = await res.json();
+        alert('Owner ' + ownerId + ' collection total value: ' + formatMoney(v));
+      } catch (e) { handleError(e); }
+    }
+
+    async function showOwnerCollection(ownerId) {
+      try {
+        const res = await fetch(baseUrl() + '/collections/owner/' + ownerId);
+        if (!res.ok) throw new Error(await res.text());
+        const arr = await res.json();
+        let s = 'Collection for owner ' + ownerId + ':\n\n';
+        for (const it of arr) {
+          s += `collectionId=${it.collectionId ?? it.collection_id}, cardId=${it.cardId ?? it.card_id}, qty=${it.quantity}\n`;
+        }
+        alert(s);
+      } catch (e) { handleError(e); }
+    }
+
+    async function acceptTrade(tradeId) {
+      if (!confirm('Accept trade #' + tradeId + '?')) return;
+      try {
+        const res = await fetch(baseUrl() + '/trades/' + tradeId + '/accept', { method: 'POST' });
+        if (!res.ok) throw new Error(await res.text());
+        const result = await res.json();
+        alert((result.success ? 'OK: ' : 'FAIL: ') + result.message);
+        await fetchTrades();
+        await fetchCollections();
+      } catch (e) { handleError(e); }
+    }
+
+    // ---------------------
+    // Propose modal handlers
+    // ---------------------
+    function openPropose() {
+      document.getElementById('p_from').value = '';
+      document.getElementById('p_to').value = '';
+      document.getElementById('p_card').value = '';
+      document.getElementById('p_qty').value = '';
+      document.getElementById('p_notes').value = '';
+      document.getElementById('p_msg').innerText = '';
+      $('#proposeModal').modal('show');
+    }
+    function closePropose() { $('#proposeModal').modal('hide'); }
+
+    async function submitPropose() {
+      try {
+        const from = parseInt(document.getElementById('p_from').value);
+        const to = parseInt(document.getElementById('p_to').value);
+        const card = parseInt(document.getElementById('p_card').value);
+        const qty = parseInt(document.getElementById('p_qty').value);
+        const notes = document.getElementById('p_notes').value || '';
+
+        if (!Number.isInteger(from) || !Number.isInteger(to) || !Number.isInteger(card) || !Number.isInteger(qty)) {
+          document.getElementById('p_msg').innerText = 'Please enter valid numeric IDs and quantity.';
+          return;
+        }
+
+        const payload = {
+          fromOwner: from,
+          toOwner: to,
+          cardId: card,
+          quantity: qty,
+          notes: notes
+        };
+
+        const res = await fetch(baseUrl() + '/trades/propose', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(txt);
+        }
+        const created = await res.json();
+        alert('Trade proposed (id: ' + (created.tradeId ?? created.trade_id) + ')');
+        closePropose();
+        await fetchTrades();
+      } catch (e) {
+        document.getElementById('p_msg').innerText = e.message || e;
+      }
+    }
+
+    // ---------------------
+    // Wire up UI
+    // ---------------------
+    document.getElementById('fetchAllBtn').addEventListener('click', async () => {
+      try {
+        document.getElementById('fetchAllBtn').disabled = true;
+        await fetchOwners();
+        await fetchCards();
+        await fetchCollections();
+        await fetchTrades();
+      } catch (e) { handleError(e); } finally { document.getElementById('fetchAllBtn').disabled = false; }
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      document.querySelectorAll('table tbody').forEach(tb => (tb.innerHTML = ''));
+    });
+
+    document.getElementById('openProposeBtn').addEventListener('click', openPropose);
+
+  </script>
+</body>
+</html>

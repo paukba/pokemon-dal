@@ -93,7 +93,7 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>3.1.0</version>
         <configuration>
-          <mainClass>com.example.pokemon.Main</mainClass>
+          <mainClass>com.example.pokemon.service.rest.PokemonServiceApp</mainClass>
         </configuration>
       </plugin>
 
