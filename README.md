@@ -13,12 +13,12 @@ It might work otherwise, but I am not sure.
 
 Architecture:
 
-Web Client (index.html + app.js)
-        ↓ HTTP (JSON)
-Spark REST API (PokemonServiceApp)
-        ↓
-Service Layer (Business Logic + Validation + Transactions)
-        ↓
-DAO Layer (JDBC)
-        ↓
-MySQL Database (pokemon_collection)
+Web Client (index.html + app.js) <br/>
+        ↓ HTTP (JSON) <br/>
+Spark REST API (PokemonServiceApp) <br/>
+        ↓ <br/>
+Service Layer (Business Logic + Validation + Transactions) <br/>
+        ↓ <br/>
+DAO Layer (JDBC) <br/>
+        ↓ <br/>
+MySQL Database (pokemon_collection) <br/>
