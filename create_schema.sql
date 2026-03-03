@@ -43,6 +43,7 @@ CREATE TABLE trades (
     quantity INT NOT NULL,
     trade_date DATE,
     notes VARCHAR(255),
+    status VARCHAR(32) NOT NULL DEFAULT 'PROPOSED',
     FOREIGN KEY (from_owner) REFERENCES owners(owner_id),
     FOREIGN KEY (to_owner) REFERENCES owners(owner_id),
     FOREIGN KEY (card_id) REFERENCES cards(card_id)

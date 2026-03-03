@@ -7,16 +7,13 @@ import com.example.pokemon.model.Card;
 import com.example.pokemon.model.CollectionEntry;
 import com.example.pokemon.model.Owner;
 import com.example.pokemon.service.OwnerService;
-import com.example.pokemon.util.DBUtil;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Owner service implementation.
- * Computes collection value using BigDecimal arithmetic to match Card.marketValueUsd type.
+ * Owner service implementation. Wraps OwnerDao and uses CollectionDao/CardDao to compute totals.
  */
 public class OwnerServiceImpl implements OwnerService {
     private final OwnerDao ownerDao;
@@ -31,9 +28,9 @@ public class OwnerServiceImpl implements OwnerService {
 
     @Override
     public Owner createOwner(Owner owner) throws Exception {
-        if (owner.getName() == null || owner.getName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Owner name is required.");
-        }
+        if (owner == null) throw new IllegalArgumentException("Owner cannot be null");
+        if (owner.getName() == null || owner.getName().trim().isEmpty())
+            throw new IllegalArgumentException("Owner name required");
         return ownerDao.create(owner);
     }
 
@@ -43,40 +40,34 @@ public class OwnerServiceImpl implements OwnerService {
     }
 
     @Override
-    public java.util.List<Owner> listOwners() throws Exception {
+    public List<Owner> listOwners() throws Exception {
         return ownerDao.findAll();
     }
 
     @Override
     public boolean updateOwner(Owner owner) throws Exception {
-        if (owner.getOwnerId() <= 0) throw new IllegalArgumentException("Invalid owner id.");
+        if (owner == null || owner.getOwnerId() == null) throw new IllegalArgumentException("Owner id required");
         return ownerDao.update(owner);
     }
 
-    /**
-     * Compute total collection value (market_value_usd * qty) and return as double to preserve existing API.
-     */
+    @Override
+    public boolean deleteOwner(int id) throws Exception {
+        return ownerDao.delete(id);
+    }
+
     @Override
     public double computeOwnerCollectionValue(int ownerId) throws Exception {
-        // Use BigDecimal for accurate arithmetic, then convert to double for the interface.
-        try (Connection conn = DBUtil.getConnection()) {
-            BigDecimal total = BigDecimal.ZERO;
-            List<CollectionEntry> entries = collectionDao.findByOwnerId(ownerId, conn);
-            for (CollectionEntry e : entries) {
-                int qty = e.getQuantity();
-                if (qty <= 0) continue;
-                Optional<Card> cardOpt = cardDao.findById(e.getCardId(), conn);
-                if (cardOpt.isPresent()) {
-                    Card c = cardOpt.get();
-                    BigDecimal market = c.getMarketValueUsd();
-                    if (market != null) {
-                        // multiply and add
-                        BigDecimal line = market.multiply(BigDecimal.valueOf(qty));
-                        total = total.add(line);
-                    }
-                }
+        List<CollectionEntry> entries = collectionDao.findByOwnerId(ownerId);
+        BigDecimal total = BigDecimal.ZERO;
+        for (CollectionEntry e : entries) {
+            Optional<Card> copt = cardDao.findById(e.getCardId());
+            if (copt.isPresent()) {
+                Card c = copt.get();
+                BigDecimal mv = c.getMarketValueUsd() == null ? BigDecimal.ZERO : c.getMarketValueUsd();
+                BigDecimal qty = BigDecimal.valueOf(e.getQuantity());
+                total = total.add(mv.multiply(qty));
             }
-            return total.doubleValue();
         }
+        return total.doubleValue();
     }
 }

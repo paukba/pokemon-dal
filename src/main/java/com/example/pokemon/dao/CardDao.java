@@ -7,21 +7,24 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * DAO for Card records.
+ * CardDao - data access operations for Card.
  *
- * Adds overloads that accept a Connection so callers (service layer) can run several DAO operations
- * within the same JDBC transaction (Connection).
+ * Note: this interface exposes two flavors of methods:
+ *  - convenience methods that manage their own Connection (create, findById, findAll, update, delete)
+ *  - variants that accept a Connection so service layer can run multiple DAO calls within a single transaction.
  */
 public interface CardDao {
-    // Existing methods
+    // convenience (connection-managed) methods
     Card create(Card card) throws Exception;
     Optional<Card> findById(int id) throws Exception;
     List<Card> findAll() throws Exception;
     boolean update(Card card) throws Exception;
     boolean delete(int id) throws Exception;
 
-    // ---- New connection-accepting overloads for transactional usage ----
-    Optional<Card> findById(int id, Connection conn) throws Exception;
-    List<Card> findAll(Connection conn) throws Exception;
-    boolean update(Card card, Connection conn) throws Exception;
+    // connection-taking variants for transactional usage
+    Card create(Card card, Connection c) throws Exception;
+    Optional<Card> findById(int id, Connection c) throws Exception;
+    List<Card> findAll(Connection c) throws Exception;
+    boolean update(Card card, Connection c) throws Exception;
+    boolean delete(int id, Connection c) throws Exception;
 }

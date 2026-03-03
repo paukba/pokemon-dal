@@ -10,57 +10,57 @@
   <artifactId>pokemon-dal</artifactId>
   <version>1.0-SNAPSHOT</version>
   <name>pokemon-dal</name>
-  <url>http://www.example.com</url>
 
   <properties>
-    <!-- use Java 21 as you had; project runs on Java 11+ but keep your current value -->
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <main.class>com.example.pokemon.service.rest.PokemonServiceApp</main.class>
   </properties>
 
   <dependencies>
-    <!-- MySQL Connector (kept as you had it) -->
+    <!-- MySQL Connector -->
     <dependency>
       <groupId>com.mysql</groupId>
       <artifactId>mysql-connector-j</artifactId>
       <version>8.1.0</version>
     </dependency>
 
-    <!-- SparkJava (lightweight microservice) -->
-    <dependency>
-      <groupId>com.sparkjava</groupId>
-      <artifactId>spark-core</artifactId>
-      <version>2.9.4</version>
-    </dependency>
-
-    <!-- Gson for JSON serialization -->
+    <!-- Gson for JSON -->
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <version>2.10.1</version>
     </dependency>
 
-    <!-- JUnit 5 + Mockito for unit tests (optional) -->
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <version>5.9.3</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <version>5.3.1</version>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- Keep your old JUnit 4 if you use it (optional) -->
+    <!-- JUnit for tests -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.13.2</version>
       <scope>test</scope>
+    </dependency>
+
+    <!-- Mockito for mocking -->
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>4.11.0</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Spark Java -->
+    <dependency>
+      <groupId>com.sparkjava</groupId>
+      <artifactId>spark-core</artifactId>
+      <version>2.9.4</version>
+    </dependency>
+
+    <!-- Logging (simple) -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>2.0.7</version>
     </dependency>
   </dependencies>
 
@@ -93,13 +93,11 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>3.1.0</version>
         <configuration>
-          <mainClass>com.example.pokemon.service.rest.PokemonServiceApp</mainClass>
+          <mainClass>com.example.pokemon.service.rest.PokemonServiceApp</mainClass> <!-- com.example.pokemon.service.rest.PokemonServiceApp *put here if not working properly--> 
         </configuration>
       </plugin>
 
-      <!-- (Optional) maven-shade-plugin if you later want a fat jar for Docker packaging.
-           Uncomment / configure only if you plan to build an uber-jar. -->
-      <!--
+      <!-- Shade plugin to build single runnable jar for hosting -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -109,16 +107,17 @@
             <phase>package</phase>
             <goals><goal>shade</goal></goals>
             <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>com.example.pokemon.service.rest.PokemonServiceApp</mainClass>
+                  <mainClass>${main.class}</mainClass>
                 </transformer>
               </transformers>
             </configuration>
           </execution>
         </executions>
       </plugin>
-      -->
+
     </plugins>
   </build>
 </project>

@@ -1,7 +1,7 @@
 package com.example.pokemon.service;
 
 /**
- * Simple typed result wrapper to return success/failure with messages.
+ * Simple service result wrapper used by TradeService.acceptTrade.
  */
 public class ServiceResult {
     private final boolean success;
@@ -12,19 +12,14 @@ public class ServiceResult {
         this.message = message;
     }
 
-    public static ServiceResult ok(String msg) {
-        return new ServiceResult(true, msg);
+    public static ServiceResult ok(String message) {
+        return new ServiceResult(true, message);
     }
 
-    public static ServiceResult fail(String msg) {
-        return new ServiceResult(false, msg);
+    public static ServiceResult fail(String message) {
+        return new ServiceResult(false, message);
     }
 
-    public boolean isSuccess() {
-        return success;
-    }
-
-    public String getMessage() {
-        return message;
-    }
+    public boolean isSuccess() { return success; }
+    public String getMessage() { return message; }
 }

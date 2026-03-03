@@ -1,6 +1,7 @@
 package com.example.pokemon.service;
 
 import com.example.pokemon.model.Trade;
+
 import java.util.List;
 import java.util.Optional;
 
