@@ -11,6 +11,7 @@ The website is http://localhost:4567/index.html when it is set up.
 
 It might work otherwise, but I am not sure.
 
+
 Architecture:
 
 Web Client (index.html + app.js) <br/>
