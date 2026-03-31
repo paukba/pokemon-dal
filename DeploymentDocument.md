@@ -12,12 +12,14 @@ Deployment Document
         - Bootstrap and JavaScript for the client UI
 
     The application contains:
+
         - Data Access Layer (DAO)
         - Business/Service Layer
         - REST API layer
         - Web client served from the application
 
     Users are able to:
+    
         - View owners, cards, collections, and trades
         - Compute owner collection values
         - Create and accept trades
