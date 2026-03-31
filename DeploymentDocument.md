@@ -1,7 +1,7 @@
 Pokémon Card Collection Manager
 Deployment Document
 
-1. Project Summary
+## 1. Project Summary
 
     This project is a Pokémon Card Collection Manager application built using:
         - Java
@@ -58,7 +58,7 @@ Deployment Document
             1. create_schemas.sql
             2. insert_test_data.sql
        OR in the terminal:
-       
+
             1. mysql -u root -p < create_schemas.sql
             2. mysql -u root -p < insert_test_data.sql
 
