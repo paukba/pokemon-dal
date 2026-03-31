@@ -19,7 +19,7 @@ Deployment Document
         - Web client served from the application
 
     Users are able to:
-    
+
         - View owners, cards, collections, and trades
         - Compute owner collection values
         - Create and accept trades
@@ -45,6 +45,7 @@ Deployment Document
     5. Open a terminal in the extracted project folder.
 
     The folder should contain:
+
         - pom.xml
         - src/
         - .sql files
@@ -53,9 +54,11 @@ Deployment Document
 4. Database Setup
 
     1. Run these files in MySQL:
+
             1. create_schemas.sql
             2. insert_test_data.sql
        OR in the terminal:
+       
             1. mysql -u root -p < create_schemas.sql
             2. mysql -u root -p < insert_test_data.sql
 
@@ -65,12 +68,13 @@ Deployment Document
     Option 1: Local Development
         1. Create: src/main/resources/db.properties
         2. Add in that file:
+
             db.url=jdbc:mysql://localhost:3306/pokemon_collection?useSSL=false&serverTimezone=UTC
             db.user=root
             db.password=[your_password]
 
     Option 2: Hosting
-        1. Set:
+        Set:
             DB_URL=jdbc:mysql://localhost:3306/pokemon_collection?
             DB_USER=root
             DB_PASSWORD=[your_password]
