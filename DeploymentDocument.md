@@ -1,5 +1,5 @@
-Pokémon Card Collection Manager
-Deployment Document
+## Pokémon Card Collection Manager
+## Deployment Document
 
 ## 1. Project Summary
 
@@ -25,7 +25,7 @@ Deployment Document
         - Create and accept trades
 
 
-2. Prerequisites
+## 2. Prerequisites
 
     Before running these must be installed:
 
@@ -36,7 +36,7 @@ Deployment Document
         - A browser
 
 
-3. Downloading the Project
+## 3. Downloading the Project
 
     1. Go to the GitHub repository.
     2. Click **Code**.
@@ -51,7 +51,7 @@ Deployment Document
         - .sql files
 
 
-4. Database Setup
+## 4. Database Setup
 
     1. Run these files in MySQL:
 
@@ -63,7 +63,7 @@ Deployment Document
             2. mysql -u root -p < insert_test_data.sql
 
 
-5. Database Configuration
+## 5. Database Configuration
 
     Option 1: Local Development
         1. Create: src/main/resources/db.properties
@@ -80,19 +80,19 @@ Deployment Document
             DB_PASSWORD=[your_password]
 
 
-6. Building the Project
+## 6. Building the Project
 
     From the project root, run the command in the terminal (powershell):
         mvn clean compile
 
 
-7. Running the Backend
+## 7. Running the Backend
 
     Run:
         mvn exec:java -Dexec.mainClass=com.example.pokemon.service.rest.PokemonServiceApp
     
     The server is run at: http://localhost:4567
 
-8. Running the Frontend
+## 8. Running the Frontend
 
     Open: http://localhost:4567/index.html
