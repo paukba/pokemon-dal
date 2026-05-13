@@ -1,4 +1,4 @@
-Pokemon Card Manager/Organizer
+Pokemon Card Manager/Organizer for CSCE 548
 
 Code written by ChatGPT, slightly adjusted by me
 
